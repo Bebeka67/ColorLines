@@ -8,10 +8,10 @@ import Backend.Model 1.0
 
 /*
   + 1.	Игровое поле должно представлять собой GridView либо TableView.
-    2.	Логика поля должна находится в отдельном классе, наследуемом от QAbstractItemModel. Модель должна объявляться в qml файле
+ +- 2.	Логика поля должна находится в отдельном классе, наследуемом от QAbstractItemModel. Модель должна объявляться в qml файле
 
     3.
-        Появление,
+      + Появление,
       + перемещение,
         удаление шариков должно быть анимированным.
 
@@ -23,7 +23,7 @@ import Backend.Model 1.0
         но не перекрывать собой игровое поле.
         Зачисление очков также должно быть анимированным (изменение числа со старого значения в новое)
 
-    6.	Должна присутствовать кнопка “Новая игра”,
+  + 6.	Должна присутствовать кнопка “Новая игра”,
     при нажатии на которую игровое поле и счётчик очков будут очищены и начнётся новая игра
 
   + 7.	Перемещение шариков со старой позиции в новую осуществляется кликом по шарику и кликом в любую пустую клетку
@@ -37,22 +37,30 @@ Control {
         color: "lightblue"
     }
 
-    property int currentScore: 0
+    readonly property color blank: "#00000000"
+    property int currentScore: gameModel.score
+
+    GameModel {
+        id: gameModel
+        onGameOver: {
+            console.log("game over")
+            tableView.enabled = false
+            tableView.opacity = 0.7
+        }
+    }
 
     RowLayout {
         anchors.fill: parent
         spacing: 1
-
 
         Item {
             id: gameField
             Layout.fillHeight: true
             Layout.preferredWidth: height
 
-
             TableView {
                 id: tableView
-                model: GameModel {id: gameModel}
+                model: gameModel
                 anchors.centerIn: parent
                 width: contentWidth
                 height: contentHeight
@@ -61,45 +69,110 @@ Control {
                 rowSpacing: 1
                 columnSpacing: 1
 
-                property int currentX: -1
-                property int currentY: -1
-                property color currentColor: "red"
 
                 Rectangle {
                     id: dynamicIndicator
 
-                    x: tableView.currentX
-                    y: tableView.currentY
-                    color: tableView.currentColor
+                    function move(point) {
+                        this.x = point.x
+                        this.y = point.y
+                    }
 
+                    color: "transparent"
                     height: 50 * 0.7
                     width: height
                     radius: height / 2
                     z: 10
-                    visible: x && y !== -1
 
                     Behavior on x {
-                        PropertyAnimation { duration: 500; easing.type: Easing.InOutBack }
+                        PropertyAnimation {
+                            duration: 500;
+                            easing.type: Easing.InOutBack;
+                            onRunningChanged:  running ? "" : dynamicIndicator.color = "transparent"
+                        }
                     }
+
                     Behavior on y {
-                        PropertyAnimation { duration: 500; easing.type: Easing.InOutBack }
+                        PropertyAnimation {
+                            duration: 500;
+                            easing.type: Easing.InOutBack;
+                            onRunningChanged:  running ? "" : dynamicIndicator.color = "transparent"
+                        }
                     }
                 }
 
-                delegate: Rectangle {
+                Item {
+                    id: moveHandler
+
+                    property bool moveMode: false
+
+                    property point startCell
+                    property point endCell
+
+                    property color targetColor
+
+                    signal clicked(int r, int c, point coords, color bColor, var button)
+
+                    onClicked: {
+                        if(button === Qt.RightButton) {
+                            moveMode = false
+                            startCell = Qt.point(-1,-1)
+                            endCell = Qt.point(-1,-1)
+                            targetColor = blank
+                            console.log("cleared")
+                            return
+                        }
+
+                        if(button === Qt.LeftButton) {
+                            if(!moveMode && bColor === blank) {
+                                console.log( "Blank cell" );
+                                return
+                            }
+
+                            if(!moveMode && bColor !== blank) {
+                                console.log("Colored Cell")
+                                moveMode = true
+                                startCell = Qt.point(r,c)
+                                targetColor = bColor
+                                dynamicIndicator.color = blank
+                                dynamicIndicator.move(coords)
+                                return
+                            }
+
+                            if(moveMode && bColor == blank) {
+                                endCell = Qt.point(r,c)
+                                dynamicIndicator.color = targetColor
+                                dynamicIndicator.move(coords)
+                                console.log("moved")
+                                gameModel.move(startCell, endCell)
+                                moveMode = false
+                                return
+                            }
+                        }
+                    }
+                }
+
+                delegate: Control {
                     implicitWidth: 50
                     implicitHeight: 50
 
-                    color: "white"
-                    border.color: "black"
 
-                    Text { text: parent.x + ":" + parent.y}
+                    background: Rectangle {
+                        radius: 2
+                        color: "white"
+                        border.color: "black"
+                        opacity: 0.7
+                    }
+
                     MouseArea {
                         anchors.fill: parent
+
+                        acceptedButtons: Qt.LeftButton | Qt.RightButton
+
                         onClicked: {
-                            tableView.currentX = staticIndicator.mapToItem(tableView, 0, 0).x
-                            tableView.currentY = staticIndicator.mapToItem(tableView, 0, 0).y
-                            currentScore +=10
+                            let p = Qt.point(staticIndicator.mapToItem(tableView, 0, 0).x,
+                                             staticIndicator.mapToItem(tableView, 0, 0).y)
+                            moveHandler.clicked(row, column, p, ballColor, mouse.button)
                         }
                     }
 
@@ -111,9 +184,48 @@ Control {
                         width: height
                         radius: height / 2
 
-                        color: "transparent"
+                        color: ballColor
+                        border.color: Qt.darker(color, 2)
+
+                        onColorChanged: {
+                            color != blank ? appear.start() : hide.start()
+                        }
+                        PropertyAnimation {
+                            id: appear
+                            target: staticIndicator;
+                            property: "opacity"
+                            from: 0
+                            to: 1
+                            duration: 1000
+                        }
+                        PropertyAnimation {
+                            id: hide
+                            target: staticIndicator;
+                            property: "opacity"
+                            from: 1
+                            to: 0
+                            duration: 1000
+                        }
                     }
                 }
+            }
+
+            Label {
+                anchors.centerIn: parent
+                font.pixelSize: 30
+
+                horizontalAlignment: Qt.AlignHCenter
+                text: "Game Over\nTotal Score: %0".arg(currentScore);
+
+                background: Rectangle {
+                    anchors.fill: parent
+                    anchors.margins: - 10
+                    radius: 3
+                    opacity: 0.9
+                    border.color: "lightgray"
+                }
+
+                visible: !tableView.enabled
             }
         }
 
@@ -133,26 +245,28 @@ Control {
                 id: gameScore
                 anchors.centerIn: parent
                 text: currentScore
-                font.pixelSize: 30
+                font.pixelSize: 60
 
                 onTextChanged: PropertyAnimation {
                     target: gameScore
                     properties: "scale"
                     easing.type: Easing.InOutBack
-                    duration: 500
-                    easing.overshoot: 2
-                    from: 0
+                    duration: 1000
+                    easing.overshoot: 3
+                    from: 0.5
                     to: scale
                 }
             }
 
             Button {
+                id: newGameButton
                 text: "New Game"
                 width: parent.width
                 anchors.bottom: parent.bottom
                 onClicked: {
-                    currentScore = 0
-                    // gameModel.clear()
+                    gameModel.clearField()
+                    tableView.enabled = true
+                    tableView.opacity = 1
                 }
             }
 
