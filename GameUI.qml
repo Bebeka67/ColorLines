@@ -6,30 +6,6 @@ import QtQuick.Layouts 1.15
 import QtQml.Models 2.15
 import Backend.Model 1.0
 
-/*
-  + 1.	Игровое поле должно представлять собой GridView либо TableView.
- +- 2.	Логика поля должна находится в отдельном классе, наследуемом от QAbstractItemModel. Модель должна объявляться в qml файле
-
-    3.
-      + Появление,
-      + перемещение,
-        удаление шариков должно быть анимированным.
-
-        Анимации появления и исчезновения - плавное увеличение или уменьшение прозрачности соответственно.
-        Анимация перемещения - плавное перемещение из одной позиции в другую (под словом “плавное” подразумевается,
-        что должно быть визуально видно перемещение шарика из одной позиции в другую)
-
-  + 5.	Полученные за время игры очки должны отображаться в цифровом виде в любой позиции окна,
-        но не перекрывать собой игровое поле.
-        Зачисление очков также должно быть анимированным (изменение числа со старого значения в новое)
-
-  + 6.	Должна присутствовать кнопка “Новая игра”,
-    при нажатии на которую игровое поле и счётчик очков будут очищены и начнётся новая игра
-
-  + 7.	Перемещение шариков со старой позиции в новую осуществляется кликом по шарику и кликом в любую пустую клетку
-    8.	Код должен быть понятным. Все неочевидные места должны сопровождаться комментариями. Приветствуется применение паттернов
-*/
-
 Control {
     id: rootItem
 
@@ -242,6 +218,17 @@ Control {
             Layout.fillWidth: true
 
             Label {
+                id: rools
+                anchors.top: parent.top
+                anchors.left: parent.left
+                anchors.right: parent.right
+                font.pixelSize: 20
+                horizontalAlignment: Qt.AlignHCenter
+                wrapMode: Text.WrapAtWordBoundaryOrAnywhere
+                text: "Правила:\nЛевый клик - выбрать шарик\nПравый клик - отменить выбор"
+            }
+
+            Label {
                 id: gameScore
                 anchors.centerIn: parent
                 text: currentScore
@@ -260,9 +247,26 @@ Control {
 
             Button {
                 id: newGameButton
-                text: "New Game"
+
+                Text {
+                    anchors.centerIn: parent
+                    horizontalAlignment: Qt.AlignHCenter
+                    text: "Новая игра"
+                    font.pixelSize: 20
+                }
+
                 width: parent.width
+
+                height: 30
+
+                background: Rectangle {
+                    color: palette.button
+                    radius: 3
+                }
                 anchors.bottom: parent.bottom
+                anchors.horizontalCenter: parent.horizontalCenter
+                anchors.margins: 10;
+
                 onClicked: {
                     gameModel.clearField()
                     tableView.enabled = true
