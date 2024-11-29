@@ -13,7 +13,6 @@ Control {
         color: "lightblue"
     }
 
-    readonly property color blank: "#00000000"
     property int currentScore: gameModel.score
 
     GameModel {
@@ -44,7 +43,6 @@ Control {
 
                 rowSpacing: 1
                 columnSpacing: 1
-
 
                 Rectangle {
                     id: dynamicIndicator
@@ -77,6 +75,22 @@ Control {
                     }
                 }
 
+                Rectangle {
+                    id: selectedIndicator
+
+                    z: 10
+                    width: 50
+                    height: 50
+
+                    color: "transparent"
+                    border.color: Qt.lighter(moveHandler.targetColor, 1.3)
+                    border.width: 3
+                    radius: 4
+                    x: moveHandler.startCoords.x - ((width * 0.7) / 4) + 2
+                    y: moveHandler.startCoords.y - ((height * 0.7) / 4) + 2
+                    visible: moveHandler.moveMode
+
+                }
                 Item {
                     id: moveHandler
 
@@ -85,37 +99,38 @@ Control {
                     property point startCell
                     property point endCell
 
+                    property point startCoords
+
                     property color targetColor
 
-                    signal clicked(int r, int c, point coords, color bColor, var button)
+                    signal clicked(int r, int c, point coords, color bColor, bool cellIsEmpty, var button)
 
                     onClicked: {
                         if(button === Qt.RightButton) {
                             moveMode = false
                             startCell = Qt.point(-1,-1)
                             endCell = Qt.point(-1,-1)
-                            targetColor = blank
                             console.log("cleared")
                             return
                         }
 
                         if(button === Qt.LeftButton) {
-                            if(!moveMode && bColor === blank) {
+                            if(!moveMode && cellIsEmpty) {
                                 console.log( "Blank cell" );
                                 return
                             }
 
-                            if(!moveMode && bColor !== blank) {
-                                console.log("Colored Cell")
+                            if(!moveMode && !cellIsEmpty) {
+                                console.log("Colored Cell: " + bColor)
                                 moveMode = true
                                 startCell = Qt.point(r,c)
+                                startCoords = coords
                                 targetColor = bColor
-                                dynamicIndicator.color = blank
                                 dynamicIndicator.move(coords)
                                 return
                             }
 
-                            if(moveMode && bColor == blank) {
+                            if(moveMode && cellIsEmpty) {
                                 endCell = Qt.point(r,c)
                                 dynamicIndicator.color = targetColor
                                 dynamicIndicator.move(coords)
@@ -148,7 +163,7 @@ Control {
                         onClicked: {
                             let p = Qt.point(staticIndicator.mapToItem(tableView, 0, 0).x,
                                              staticIndicator.mapToItem(tableView, 0, 0).y)
-                            moveHandler.clicked(row, column, p, ballColor, mouse.button)
+                            moveHandler.clicked(row, column, p, ballColor, isEmpty, mouse.button)
                         }
                     }
 
@@ -163,9 +178,14 @@ Control {
                         color: ballColor
                         border.color: Qt.darker(color, 2)
 
-                        onColorChanged: {
-                            color != blank ? appear.start() : hide.start()
+                        opacity: 1
+
+                        property bool empty: isEmpty
+
+                        onEmptyChanged: {
+                            empty ? hide.start() : appear.start()
                         }
+
                         PropertyAnimation {
                             id: appear
                             target: staticIndicator;
@@ -276,13 +296,5 @@ Control {
 
         }
     }
-
-
-
-
-
-
-
-
 
 }

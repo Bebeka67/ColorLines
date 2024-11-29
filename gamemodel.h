@@ -2,11 +2,6 @@
 #define GAMEMODEL_H
 
 #include <QAbstractTableModel>
-#include <QColor>
-#include <QSet>
-#include <QRandomGenerator64>
-#include <QDebug>
-
 
 class DataMatrix;
 class GameModel : public QAbstractTableModel
@@ -24,7 +19,8 @@ public:
 
     enum Roles {
         DisplayRole = Qt::DisplayRole,
-        ColorRole
+        ColorRole,
+        EmptyRole
     };
 
     QHash<int, QByteArray> roleNames() const override;
@@ -43,50 +39,5 @@ private:
     DataMatrix *matrix;
     int m_score;
 };
-
-class DataMatrix : public QObject
-{
-    Q_OBJECT
-public:
-    explicit DataMatrix(QObject *parent = nullptr);
-
-    int rows()    const { return m_rows; }
-    int columns() const { return m_columns; }
-
-    QColor getColor(int,int) const;
-
-    void computerTern();
-
-    void move(QPoint from, QPoint to);
-
-    void append(int, int, int);
-    void remove(int, int);
-    void clear();
-
-signals:
-    void cellChanged(int,int);
-    void gameOver();
-    void updateScore();
-
-private:
-    void init();
-    enum Colors {
-        Transparent  = 0,
-        Red,
-        Cyan,
-        Blue,
-        Green,
-        ColorsCount
-    };
-    QVector<QVector<Colors>> m_matrix;
-    const int m_rows    = 9;
-    const int m_columns = 9;
-    QList<QPair<int,int>> m_emptyCells;
-    Colors color(int,int) const;
-private slots:
-    void checkLines(int, int);
-    void removeLine(QPoint, QPoint);
-};
-
 
 #endif // GAMEMODEL_H
