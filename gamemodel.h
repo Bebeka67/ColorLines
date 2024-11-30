@@ -3,6 +3,8 @@
 
 #include <QAbstractTableModel>
 
+#include "gamereminder.h"
+
 class DataMatrix;
 class GameModel : public QAbstractTableModel
 {
@@ -22,7 +24,6 @@ public:
         ColorRole,
         EmptyRole
     };
-
     QHash<int, QByteArray> roleNames() const override;
 
     Q_INVOKABLE void move(QPoint from, QPoint to);
@@ -36,6 +37,7 @@ signals:
     void scoreChanged();
 
 private:
+    GameReminder *gameR;
     DataMatrix *matrix;
     int m_score;
 };

@@ -1,4 +1,4 @@
-QT += quick
+QT += quick sql
 
 # You can make your code fail to compile if it uses deprecated APIs.
 # In order to do so, uncomment the following line.
@@ -7,6 +7,7 @@ QT += quick
 SOURCES += \
         datamatrix.cpp \
         gamemodel.cpp \
+        gamereminder.cpp \
         main.cpp
 
 RESOURCES += qml.qrc
@@ -25,4 +26,5 @@ else: unix:!android: target.path = /opt/$${TARGET}/bin
 HEADERS += \
     datamatrix.h \
     gamemodel.h \
+    gamereminder.h \
     matrix.h

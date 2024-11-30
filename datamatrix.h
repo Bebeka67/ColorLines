@@ -76,8 +76,4 @@ private slots:
     void removeLine(QPoint, QPoint);
 };
 
-
-
-
-
 #endif // DATAMATRIX_H

@@ -7,6 +7,7 @@ GameModel::GameModel(QObject *parent)
     : QAbstractTableModel(parent),
     m_score(0)
 {
+    gameR = new GameReminder(this);
     matrix = new DataMatrix(this);
 
     connect(matrix, &DataMatrix::gameOver, this, &GameModel::gameOver);
@@ -20,6 +21,7 @@ GameModel::GameModel(QObject *parent)
         QModelIndex index = this->createIndex(r,c);
         emit dataChanged(index, index, {ColorRole, EmptyRole});
     });
+
 }
 
 GameModel::~GameModel()
